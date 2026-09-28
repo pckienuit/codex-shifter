@@ -1,0 +1,34 @@
+{
+  "1": {
+    "name": "Flash (Speed)",
+    "model": "ag/gemini-3.8-flash-high"
+  },
+  "2": {
+    "name": "GPT Sol",
+    "model": "cx/gpt-6-sol"
+  },
+  "3": {
+    "name": "GPT Astra",
+    "model": "cx/gpt-6-astra"
+  },
+  "4": {
+    "name": "Adaptive",
+    "model": "N0VA"
+  },
+  "5": {
+    "name": "GPT Luna",
+    "model": "cx/gpt-6-luna"
+  },
+  "6": {
+    "name": "MiMo (Xiaomi)",
+    "model": "N0VA"
+  },
+  "7": {
+    "name": "Nemotron (Ultra)",
+    "model": "N0VA"
+  },
+  "R": {
+    "name": "Reverse (Fallback)",
+    "model": "exec-fallback"
+  }
+}

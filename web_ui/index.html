@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codex Model Shifter</title>
+  <style>
+    :root {
+      --bg: #0c0d10;
+      --panel: #16181e;
+      --plate: #1f222b;
+      --plate-border: #323745;
+      --metal-rim: linear-gradient(145deg, #444b5c, #1f232b);
+      --slot-bg: #07080a;
+      --accent: #ff4757;
+      --text: #f1f2f6;
+      --subtext: #747d8c;
+      --green: #2ed573;
+      --blue: #1e90ff;
+      --gold: #ffa502;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .app-container {
+      width: 420px;
+      background: var(--panel);
+      border: 1px solid var(--plate-border);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .brand-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--subtext);
+    }
+    .map-btn {
+      background: #252834;
+      border: 1px solid var(--plate-border);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .map-btn:hover {
+      background: #353a4c;
+      border-color: #555d7a;
+    }
+
+    /* Gated Shifter Housing */
+    .shifter-housing {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      background: var(--plate);
+      border-radius: 24px;
+      border: 4px solid #2a2e3a;
+      box-shadow: inset 0 6px 16px rgba(0,0,0,0.8), 0 8px 24px rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+    }
+
+    /* Hex Screws */
+    .bolt {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: radial-gradient(circle, #555c6e, #2b303d);
+      border-radius: 50%;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.2), inset 0 1px 2px #000;
+    }
+    .b-tl { top: 10px; left: 10px; }
+    .b-tr { top: 10px; right: 10px; }
+    .b-bl { bottom: 10px; left: 10px; }
+    .b-br { bottom: 10px; right: 10px; }
+
+    /* Physical Cutout Grooves (H-Shifter Plate) */
+    .groove-crossbar {
+      position: absolute;
+      background: var(--slot-bg);
+      border-radius: 8px;
+      box-shadow: inset 0 4px 8px #000, 0 1px 0 rgba(255,255,255,0.05);
+      width: 208px;
+      height: 22px;
+      top: 149px;
+      left: 56px;
+    }
+    .groove-v {
+      position: absolute;
+      background: var(--slot-bg);
+      border-radius: 8px;
+      box-shadow: inset 0 4px 8px #000, 0 1px 0 rgba(255,255,255,0.05);
+      width: 22px;
+      height: 208px;
+      top: 56px;
+    }
+    .col-1 { left: 56px; }
+    .col-2 { left: 118px; }
+    .col-3 { left: 180px; }
+    .col-4 { left: 242px; }
+
+    /* Gear Indicators (Engraved Numbers on Plate) */
+    .gate-number {
+      position: absolute;
+      font-size: 15px;
+      font-weight: 900;
+      color: #636b7d;
+      pointer-events: none;
+      transition: color 0.3s;
+      width: 30px;
+      text-align: center;
+    }
+    .pos-1 { top: 30px; left: 52px; }
+    .pos-2 { bottom: 30px; left: 52px; }
+    .pos-3 { top: 30px; left: 114px; }
+    .pos-4 { bottom: 30px; left: 114px; }
+    .pos-5 { top: 30px; left: 176px; }
+    .pos-6 { bottom: 30px; left: 176px; }
+    .pos-7 { top: 30px; left: 238px; }
+    .pos-R { bottom: 30px; left: 238px; color: #a04049; }
+
+    .active-number {
+      color: var(--green) !important;
+      text-shadow: 0 0 12px rgba(46, 213, 115, 0.8);
+    }
+    .active-number.is-r {
+      color: var(--accent) !important;
+      text-shadow: 0 0 12px rgba(255, 71, 87, 0.8);
+    }
+
+    /* Heavy Metal Lever & Shift Knob */
+    .knob {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #4a5061, #181a20 75%);
+      border: 3px solid #5a6275;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.85), inset 0 2px 4px rgba(255,255,255,0.4);
+      cursor: grab;
+      z-index: 50;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+      will-change: transform;
+      top: 0;
+      left: 0;
+      transform: translate3d(0, 0, 0) translate(-50%, -50%);
+    }
+    .knob:active {
+      cursor: grabbing;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.9), inset 0 1px 2px rgba(255,255,255,0.3);
+    }
+    .knob-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #111317;
+      border: 1px solid #333845;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    /* Telemetry Info Card */
+    .telemetry {
+      width: 100%;
+      margin-top: 24px;
+      background: #111216;
+      border: 1px solid var(--plate-border);
+      border-radius: 18px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .gear-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .gear-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--green);
+      text-transform: uppercase;
+    }
+    .gear-subname {
+      font-size: 12px;
+      color: var(--subtext);
+    }
+    .active-model-id {
+      font-size: 13px;
+      font-weight: 600;
+      font-family: monospace;
+      color: #fff;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    /* Modal Mapping Editor */
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(8, 9, 12, 0.92);
+      backdrop-filter: blur(10px);
+      border-radius: 28px;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      padding: 24px;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-header h2 {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--subtext);
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+    .map-row {
+      display: flex;
+      flex-direction: column;
+      background: #181a22;
+      border: 1px solid #2e3342;
+      border-radius: 12px;
+      padding: 8px 12px;
+      gap: 6px;
+    }
+    .map-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .map-gear-label {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+    .map-model-select {
+      background: #101217;
+      border: 1px solid #363d4f;
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      width: 100%;
+      outline: none;
+      font-family: monospace;
+    }
+    .save-btn {
+      margin-top: 14px;
+      background: var(--blue);
+      border: none;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .save-btn:hover {
+      background: #0077ee;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <div class="top-bar">
+      <div class="brand-title">⚙️ Codex Shifter</div>
+      <button class="map-btn" onclick="openModal()">
+        <span>Remap Gears</span>
+      </button>
+    </div>
+
+    <!-- Gated Shifter Frame -->
+    <div class="shifter-housing" id="housing">
+      <div class="bolt b-tl"></div>
+      <div class="bolt b-tr"></div>
+      <div class="bolt b-bl"></div>
+      <div class="bolt b-br"></div>
+
+      <!-- Cutout Slots -->
+      <div class="groove-crossbar"></div>
+      <div class="groove-v col-1"></div>
+      <div class="groove-v col-2"></div>
+      <div class="groove-v col-3"></div>
+      <div class="groove-v col-4"></div>
+
+      <!-- Plate Engravings -->
+      <div class="gate-number pos-1" id="lbl-1">1</div>
+      <div class="gate-number pos-2" id="lbl-2">2</div>
+      <div class="gate-number pos-3" id="lbl-3">3</div>
+      <div class="gate-number pos-4" id="lbl-4">4</div>
+      <div class="gate-number pos-5" id="lbl-5">5</div>
+      <div class="gate-number pos-6" id="lbl-6">6</div>
+      <div class="gate-number pos-7" id="lbl-7">7</div>
+      <div class="gate-number pos-R" id="lbl-R">R</div>
+
+      <!-- Heavy Moving Knob -->
+      <div class="knob" id="knob">
+        <div class="knob-badge" id="badge">1</div>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Card -->
+    <div class="telemetry">
+      <div class="gear-row">
+        <div class="gear-title" id="t-gear">GEAR 1</div>
+        <div class="gear-subname" id="t-subname">Speed Mode</div>
+      </div>
+      <div class="active-model-id" id="t-model">ag/gemini-3.8-flash-high</div>
+    </div>
+
+    <!-- Remap Modal -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal-header">
+        <h2>Custom Gear Mapping</h2>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Rendered by JS -->
+      </div>
+      <button class="save-btn" onclick="saveMappings()">Lưu & Cập nhật</button>
+    </div>
+  </div>
+
+  <script>
+    // Audio synthesis for mechanical shifter clicks
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClack(frequency = 120, duration = 0.04) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + duration);
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Groove slot geometry constraints (Housing size: 320 x 320)
+    const Y_TOP = 67;
+    const Y_MID = 160;
+    const Y_BOT = 253;
+    const COLS = [67, 129, 191, 253]; // col 1, 2, 3, 4
+
+    // Gated destinations
+    const GATES = {
+      "1": { col: 0, x: COLS[0], y: Y_TOP },
+      "2": { col: 0, x: COLS[0], y: Y_BOT },
+      "3": { col: 1, x: COLS[1], y: Y_TOP },
+      "4": { col: 1, x: COLS[1], y: Y_BOT },
+      "5": { col: 2, x: COLS[2], y: Y_TOP },
+      "6": { col: 2, x: COLS[2], y: Y_BOT },
+      "7": { col: 3, x: COLS[3], y: Y_TOP },
+      "R": { col: 3, x: COLS[3], y: Y_BOT }
+    };
+
+    // State
+    let currentX = GATES["1"].x;
+    let currentY = GATES["1"].y;
+    let targetX = currentX;
+    let targetY = currentY;
+    let currentGear = "1";
+    let isDragging = false;
+    let isAnimating = false;
+    let lastClackTime = 0;
+
+    let gearMappings = {};
+    let allModels = [];
+
+    const housing = document.getElementById('housing');
+    const knob = document.getElementById('knob');
+    const badge = document.getElementById('badge');
+
+    // Load mappings & models from server
+    async function loadConfig() {
+      try {
+        const [mRes, gRes] = await Promise.all([
+          fetch('/api/models'),
+          fetch('/api/gear_mappings')
+        ]);
+        allModels = await mRes.json();
+        gearMappings = await gRes.json();
+        updateDisplay(currentGear);
+      } catch (e) {
+        console.error("Config load error:", e);
+      }
+    }
+
+    function updateDisplay(gear) {
+      currentGear = gear;
+      badge.textContent = gear;
+      document.querySelectorAll('.gate-number').forEach(el => el.classList.remove('active-number'));
+      const activeLbl = document.getElementById(`lbl-${gear}`);
+      if (activeLbl) {
+        activeLbl.classList.add('active-number');
+        if (gear === 'R') activeLbl.classList.add('is-r');
+      }
+
+      const info = gearMappings[gear] || { name: `Gear ${gear}`, model: "Unmapped" };
+      document.getElementById('t-gear').textContent = `GEAR ${gear}`;
+      document.getElementById('t-subname').textContent = info.name;
+      document.getElementById('t-model').textContent = info.model;
+    }
+
+    // Heavy Physics Drag Engine along H-grooves
+    function projectOntoGrooves(px, py) {
+      let nearestCol = COLS[0];
+      let minDist = Math.abs(px - nearestCol);
+      for (let c of COLS) {
+        let d = Math.abs(px - c);
+        if (d < minDist) {
+          minDist = d;
+          nearestCol = c;
+        }
+      }
+
+      const distToMid = Math.abs(py - Y_MID);
+      if (distToMid < 24) {
+        const clampedX = Math.max(COLS[0], Math.min(COLS[3], px));
+        const constrainedY = Y_MID + (py - Y_MID) * 0.2;
+        return { x: clampedX, y: constrainedY, inCrossbar: true };
+      } else {
+        const clampedY = Math.max(Y_TOP, Math.min(Y_BOT, py));
+        const constrainedX = nearestCol + (px - nearestCol) * 0.15;
+        return { x: constrainedX, y: clampedY, inCrossbar: false };
+      }
+    }
+
+    // Pointer Drag Listeners
+    knob.addEventListener('pointerdown', (e) => {
+      if (isAnimating) return;
+      isDragging = true;
+      knob.setPointerCapture(e.pointerId);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const rect = housing.getBoundingClientRect();
+      const rawX = e.clientX - rect.left;
+      const rawY = e.clientY - rect.top;
+
+      const projected = projectOntoGrooves(rawX, rawY);
+      targetX = projected.x;
+      targetY = projected.y;
+
+      const now = Date.now();
+      if (projected.inCrossbar && now - lastClackTime > 160) {
+        playClack(80, 0.03);
+        lastClackTime = now;
+      }
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+
+      let nearestGate = null;
+      let minGateDist = 99999;
+      for (const [k, pos] of Object.entries(GATES)) {
+        const d = Math.hypot(currentX - pos.x, currentY - pos.y);
+        if (d < minGateDist) {
+          minGateDist = d;
+          nearestGate = k;
+        }
+      }
+
+      if (nearestGate && minGateDist < 55) {
+        snapToGate(nearestGate);
+      } else {
+        snapToGate(currentGear);
+      }
+    });
+
+    function snapToGate(gearKey) {
+      const g = GATES[gearKey];
+      if (!g) return;
+
+      animateAlongGroove(g.x, g.y, () => {
+        playClack(160, 0.05);
+        updateDisplay(gearKey);
+        fetch(`/shift?gear=${gearKey}`);
+      });
+    }
+
+    function setKnobPosition(x, y) {
+      knob.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+    }
+
+    // Waypoint routing along the slot lines (Distance-proportional, smooth easing, no ghosting)
+    function animateAlongGroove(destX, destY, onComplete) {
+      isAnimating = true;
+      const startX = currentX;
+      const startY = currentY;
+
+      const waypoints = [];
+      waypoints.push({ x: startX, y: startY });
+
+      if (Math.abs(startY - Y_MID) > 4) {
+        waypoints.push({ x: startX, y: Y_MID });
+      }
+      if (Math.abs(startX - destX) > 4) {
+        waypoints.push({ x: destX, y: Y_MID });
+      }
+      waypoints.push({ x: destX, y: destY });
+
+      // Compute total polyline distance
+      const segments = [];
+      let totalDist = 0;
+      for (let i = 0; i < waypoints.length - 1; i++) {
+        const d = Math.hypot(waypoints[i+1].x - waypoints[i].x, waypoints[i+1].y - waypoints[i].y);
+        segments.push({ p1: waypoints[i], p2: waypoints[i+1], dist: d });
+        totalDist += d;
+      }
+
+      if (totalDist === 0) {
+        isAnimating = false;
+        if (onComplete) onComplete();
+        return;
+      }
+
+      // Smooth kinematic timing: base duration proportional to total distance + mechanical inertia
+      // ~220ms for short shifts, ~380ms for cross-gate shifts
+      const duration = Math.max(180, Math.min(420, 150 + totalDist * 0.75));
+      const startTime = performance.now();
+      let lastSegIndex = 0;
+
+      // Cubic Bezier / Ease-out Quartic for realistic mechanical snap
+      function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function frame(now) {
+        const elapsed = now - startTime;
+        const rawProgress = Math.min(1, elapsed / duration);
+        const easedProgress = easeInOutCubic(rawProgress);
+        const currentTargetDist = easedProgress * totalDist;
+
+        // Find which segment we are currently in
+        let distAccum = 0;
+        let foundX = destX;
+        let foundY = destY;
+
+        for (let i = 0; i < segments.length; i++) {
+          const seg = segments[i];
+          if (currentTargetDist <= distAccum + seg.dist || i === segments.length - 1) {
+            const segT = seg.dist > 0 ? (currentTargetDist - distAccum) / seg.dist : 1;
+            foundX = seg.p1.x + (seg.p2.x - seg.p1.x) * Math.min(1, Math.max(0, segT));
+            foundY = seg.p1.y + (seg.p2.y - seg.p1.y) * Math.min(1, Math.max(0, segT));
+            
+            if (i !== lastSegIndex) {
+              playClack(95, 0.02); // Click when turning corner at crossbar
+              lastSegIndex = i;
+            }
+            break;
+          }
+          distAccum += seg.dist;
+        }
+
+        currentX = foundX;
+        currentY = foundY;
+        setKnobPosition(currentX, currentY);
+
+        if (rawProgress < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          currentX = destX;
+          currentY = destY;
+          setKnobPosition(currentX, currentY);
+          isAnimating = false;
+          if (onComplete) onComplete();
+        }
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    // Heavy drag physics loop
+    function physicsLoop() {
+      if (isDragging) {
+        currentX += (targetX - currentX) * 0.38;
+        currentY += (targetY - currentY) * 0.38;
+        setKnobPosition(currentX, currentY);
+      }
+      requestAnimationFrame(physicsLoop);
+    }
+    requestAnimationFrame(physicsLoop);
+
+    // Keyboard support
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toUpperCase();
+      if (GATES[k]) {
+        snapToGate(k);
+      }
+    });
+
+    // Remap Modal Logic
+    function openModal() {
+      const container = document.getElementById('modalBody');
+      container.innerHTML = '';
+
+      for (const [gear, info] of Object.entries(gearMappings)) {
+        const row = document.createElement('div');
+        row.className = 'map-row';
+        row.innerHTML = `
+          <div class="map-row-top">
+            <span class="map-gear-label">GEAR ${gear}</span>
+            <input type="text" id="name-${gear}" value="${info.name}" style="background:#101217;border:1px solid #363d4f;color:#aaa;padding:2px 6px;border-radius:4px;font-size:11px;width:140px;" />
+          </div>
+          <select class="map-model-select" id="select-${gear}">
+            ${allModels.map(m => `<option value="${m}" ${m === info.model ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+        `;
+        container.appendChild(row);
+      }
+
+      document.getElementById('modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+    }
+
+    async function saveMappings() {
+      for (const gear of Object.keys(gearMappings)) {
+        const sel = document.getElementById(`select-${gear}`);
+        const inp = document.getElementById(`name-${gear}`);
+        if (sel && inp) {
+          gearMappings[gear].model = sel.value;
+          gearMappings[gear].name = inp.value;
+        }
+      }
+
+      await fetch('/api/gear_mappings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(gearMappings)
+      });
+
+      closeModal();
+      updateDisplay(currentGear);
+    }
+
+    // Startup
+    loadConfig();
+    snapToGate("1");
+  </script>
+</body>
+</html>

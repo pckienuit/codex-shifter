@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Launch Codex Model Shifter as a standalone desktop floating window
+APP_URL="http://127.0.0.1:20129"
+USER_DATA="/home/pckien/.config/codex-shifter-profile"
+
+mkdir -p "$USER_DATA"
+
+# Use dedicated user-data-dir to guarantee a truly isolated standalone window without attaching to main Thorium tabs
+exec /usr/bin/thorium-browser \
+  --user-data-dir="$USER_DATA" \
+  --app="$APP_URL" \
+  --window-size=430,640 \
+  --class="CodexShifter" \
+  --disable-features=Translate \
+  "$@"
